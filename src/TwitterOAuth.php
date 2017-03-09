@@ -18,7 +18,7 @@ class TwitterOAuth extends Config
     const API_VERSION = '1.1';
     const API_HOST = 'https://api.twitter.com';
     const UPLOAD_HOST = 'https://upload.twitter.com';
-    const UPLOAD_CHUNK = 40960; // 1024 * 40
+    const UPLOAD_CHUNK = 524288; // 1024 * 512
 
     /** @var Response details about the result of the last request */
     private $response;
@@ -306,6 +306,64 @@ class TwitterOAuth extends Config
             $return['media_category'] = $parameters['media_category'];
         }
         return $return;
+    }
+
+    /**
+     * forkして追加したメソッド
+     * 動画アップロード用
+     *
+     * @param array $parameters
+     * @return array|object
+     */
+    public function uploadMovie(array $parameters)
+    {
+        // Init
+        $init = $this->http('POST', self::UPLOAD_HOST, 'media/upload', [
+            'command' => 'INIT',
+            'media_type' => $parameters['media_type'],
+            'total_bytes' => $parameters['file_size'],
+            'media_category' => 'tweet_video',
+        ]);
+
+        // Append
+        $segment_index = 0;
+        $file_data = file_get_contents($parameters['media']);
+        $len = strlen($file_data);
+        while (strlen($file_data) > 0)
+        {
+            if ($len - self::UPLOAD_CHUNK > 0) {
+                $buf = substr($file_data, 0, self::UPLOAD_CHUNK);
+                $file_data = substr($file_data, self::UPLOAD_CHUNK);
+                $len -= self::UPLOAD_CHUNK;
+            } else {
+                $buf = $file_data;
+                $file_data = "";
+                $len = 0;
+            }
+
+            $this->http('POST', self::UPLOAD_HOST, 'media/upload', [
+                'command' => 'APPEND',
+                'media_id' => $init->media_id_string,
+                'segment_index' => $segment_index++,
+                'media_data' => base64_encode($buf),
+            ]);
+        }
+
+        // Finalize
+        $finalize = $this->http('POST', self::UPLOAD_HOST, 'media/upload', [
+            'command' => 'FINALIZE',
+            'media_id' => $init->media_id_string
+        ]);
+
+        do {
+            $status = $this->http('GET', self::UPLOAD_HOST, 'media/upload', [
+                'command' => 'STATUS',
+                'media_id' => $init->media_id_string,
+            ]);
+            sleep(0.1);
+        } while ($status->processing_info->state != 'succeeded');
+
+        return $finalize;
     }
 
     /**
