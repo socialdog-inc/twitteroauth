@@ -18,7 +18,7 @@ class TwitterOAuth extends Config
     const API_VERSION = '1.1';
     const API_HOST = 'https://api.twitter.com';
     const UPLOAD_HOST = 'https://upload.twitter.com';
-    const UPLOAD_CHUNK = 524288; // 1024 * 512
+    const UPLOAD_CHUNK = 2097152; // 1024 * 1024 * 2（2MB）
 
     /** @var Response details about the result of the last request */
     private $response;
