@@ -410,7 +410,7 @@ class TwitterOAuth extends Config
         $this->resetAttemptsNumber();
         $url = sprintf('%s/%s/%s.json', $host, self::API_VERSION, $path);
         $this->response->setApiPath($path);
-        return $this->makeRequests($url, $method, $parameters);
+        return $this->makeRequests($url, $method, $parameters, $json);
     }
 
     /**
@@ -466,7 +466,7 @@ class TwitterOAuth extends Config
             unset($parameters['oauth_callback']);
         }
         if ($this->bearer === null) {
-            $request->signRequest($this->signatureMethod, $this->consumer, $this->token);
+            $request->signRequest($this->signatureMethod, $this->consumer, $this->token, $json);
             $authorization = $request->toHeader();
             if (array_key_exists('oauth_verifier', $parameters)) {
                 // Twitter doesn't always work with oauth in the body and in the header
