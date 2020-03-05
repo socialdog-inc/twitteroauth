@@ -386,12 +386,27 @@ class TwitterOAuth extends Config
     {
         $this->resetLastResponse();
         $this->resetAttemptsNumber();
-        $url = sprintf('%s/%s/%s.json', $host, self::API_VERSION, $path);
+        $url = $this->getUrl($host, $path);
         $this->response->setApiPath($path);
         if (!$json) {
             $parameters = $this->cleanUpParameters($parameters);
         }
         return $this->makeRequests($url, $method, $parameters, $json);
+    }
+
+    /**
+     * Twitter Labs のメソッドに対応させる
+     *
+     * @param $host
+     * @param $path
+     * @return string
+     */
+    private function getUrl($host, $path)
+    {
+        if (strpos($path, 'labs') === 0) {
+            return $host . '/' . $path;
+        }
+        return sprintf('%s/%s/%s.json', $host, self::API_VERSION, $path);
     }
 
     /**
