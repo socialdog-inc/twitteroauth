@@ -472,7 +472,7 @@ class TwitterOAuth extends Config
      *
      * @return array|object
      */
-    private function http(
+    public function http( // ホストをカスタマイズ出来るようにprivate→publicに変更
         string $method,
         string $host,
         string $path,
