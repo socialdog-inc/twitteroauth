@@ -471,8 +471,10 @@ class TwitterOAuth extends Config
      * @param bool   $json
      *
      * @return array|object
+     * 
+     * ホストをカスタマイズ出来るようにprivate→publicに変更 2023/06/08
      */
-    public function http( // ホストをカスタマイズ出来るようにprivate→publicに変更
+    public function http(
         string $method,
         string $host,
         string $path,
