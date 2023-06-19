@@ -848,11 +848,7 @@ class TwitterOAuth extends Config
             $parameters = $this->cleanUpParameters($parameters);
         }
         // enterprise APIにバージョンがない
-        $apiUrl = sprintf(
-            '%s/%s%s',
-            $host,
-            $path,
-        );
+        $apiUrl = sprintf('%s/%s%s', $host, $path);
         return $this->makeBasicRequests(
             $apiUrl,
             $method,
