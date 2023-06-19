@@ -471,7 +471,7 @@ class TwitterOAuth extends Config
      * @param bool   $json
      *
      * @return array|object
-     * 
+     *
      * ホストをカスタマイズ出来るようにprivate→publicに変更 2023/06/08
      */
     public function http(
@@ -828,7 +828,7 @@ class TwitterOAuth extends Config
      * @param bool   $json
      *
      * @return array|object
-     * 
+     *
      * ホストをカスタマイズ出来るようにprivate→publicに変更 2023/06/08
      */
     public function httpBasic(
@@ -881,7 +881,14 @@ class TwitterOAuth extends Config
     ) {
         do {
             $this->sleepIfNeeded();
-            $result = $this->basicRequest($url, $method, $username, $password, $parameters, $json);
+            $result = $this->basicRequest(
+                $url,
+                $method,
+                $username,
+                $password,
+                $parameters,
+                $json,
+            );
             $response = JsonDecoder::decode($result, $this->decodeJsonAsArray);
             $this->response->setBody($response);
             $this->attempts++;
@@ -916,8 +923,10 @@ class TwitterOAuth extends Config
         // therefore it shouldn't be included in the parameters array.
         $reqParams = $json ? [] : $parameters;
         $request = new Request($method, $url, $reqParams);
-        
-        $authorization = 'Authorization: Basic ' . base64_encode($username . '.' . $password);
+
+        $authorization =
+            'Authorization: Basic ' .
+            base64_encode($username . '.' . $password);
 
         return $this->request(
             $request->getNormalizedHttpUrl(),
@@ -927,6 +936,4 @@ class TwitterOAuth extends Config
             $json,
         );
     }
-
-    
 }
