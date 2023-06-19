@@ -831,7 +831,7 @@ class TwitterOAuth extends Config
      * 
      * ホストをカスタマイズ出来るようにprivate→publicに変更 2023/06/08
      */
-    public function http_basic(
+    public function httpBasic(
         string $method,
         string $username,
         string $password,
@@ -856,7 +856,7 @@ class TwitterOAuth extends Config
             $json,
         );
     }
-    
+
     /**
      *
      * Make requests and retry them (if enabled) in case of Twitter's problems.
