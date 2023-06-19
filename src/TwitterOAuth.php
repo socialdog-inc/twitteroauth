@@ -471,10 +471,8 @@ class TwitterOAuth extends Config
      * @param bool   $json
      *
      * @return array|object
-     *
-     * ホストをカスタマイズ出来るようにprivate→publicに変更 2023/06/08
      */
-    public function http(
+    private function http(
         string $method,
         string $host,
         string $path,
@@ -816,126 +814,5 @@ class TwitterOAuth extends Config
         }
 
         return $options;
-    }
-
-    /**
-     * @param string $method
-     * @param string $username
-     * @param string $password
-     * @param string $host
-     * @param string $path
-     * @param array  $parameters
-     * @param bool   $json
-     *
-     * @return array|object
-     *
-     * ホストをカスタマイズ出来るようにprivate→publicに変更 2023/06/08
-     */
-    public function httpBasic(
-        string $method,
-        string $username,
-        string $password,
-        string $host,
-        string $path,
-        array $parameters,
-        bool $json
-    ) {
-        $this->resetLastResponse();
-        $this->resetAttemptsNumber();
-        $url = $this->getUrl($host, $path);
-        $this->response->setApiPath($path);
-        if (!$json) {
-            $parameters = $this->cleanUpParameters($parameters);
-        }
-        // enterprise APIにバージョンがない
-        $apiUrl = sprintf('%s/%s%s', $host, $path);
-        return $this->makeBasicRequests(
-            $apiUrl,
-            $method,
-            $username,
-            $password,
-            $parameters,
-            $json,
-        );
-    }
-
-    /**
-     *
-     * Make requests and retry them (if enabled) in case of Twitter's problems.
-     *
-     * @param string $method
-     * @param string $url
-     * @param string $username
-     * @param string $password
-     * @param string $method
-     * @param array  $parameters
-     * @param bool   $json
-     *
-     * @return array|object
-     */
-    private function makeBasicRequests(
-        string $url,
-        string $method,
-        string $username,
-        string $password,
-        array $parameters,
-        bool $json
-    ) {
-        do {
-            $this->sleepIfNeeded();
-            $result = $this->basicRequest(
-                $url,
-                $method,
-                $username,
-                $password,
-                $parameters,
-                $json,
-            );
-            $response = JsonDecoder::decode($result, $this->decodeJsonAsArray);
-            $this->response->setBody($response);
-            $this->attempts++;
-            // Retry up to our $maxRetries number if we get errors greater than 500 (over capacity etc)
-        } while ($this->requestsAvailable());
-
-        return $response;
-    }
-
-    /**
-     * Format a basic API request
-     *
-     * @param string $url
-     * @param string $method
-     * @param string $username
-     * @param string $password
-     * @param array  $parameters
-     * @param bool   $json
-     *
-     * @return string
-     * @throws TwitterOAuthException
-     */
-    private function basicRequest(
-        string $url,
-        string $method,
-        string $username,
-        string $password,
-        array $parameters,
-        bool $json = false
-    ) {
-        // The json payload is not included in the signature on json requests,
-        // therefore it shouldn't be included in the parameters array.
-        $reqParams = $json ? [] : $parameters;
-        $request = new Request($method, $url, $reqParams);
-
-        $authorization =
-            'Authorization: Basic ' .
-            base64_encode($username . '.' . $password);
-
-        return $this->request(
-            $request->getNormalizedHttpUrl(),
-            $method,
-            $authorization,
-            $parameters,
-            $json,
-        );
     }
 }
