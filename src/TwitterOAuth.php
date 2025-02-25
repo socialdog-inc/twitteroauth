@@ -521,7 +521,8 @@ class TwitterOAuth extends Config
      * mediaType (image/png等)からXのMedia categoryを取得
      * @see https://docs.x.com/x-api/media/quickstart/best-practices#media-categories
      */
-    private function getMediaCategory(string $mediaType): string {
+    private function getMediaCategory(string $mediaType): string
+    {
         if ($mediaType === 'image/gif') {
             return 'tweet_gif';
         }
