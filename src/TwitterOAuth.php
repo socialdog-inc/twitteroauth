@@ -449,6 +449,45 @@ class TwitterOAuth extends Config
     }
 
     /**
+     * Private method to get params for upload media chunked init.
+     * Twitter docs: https://docs.x.com/x-api/media/quickstart/media-upload-chunked#step-1-%3A-post-media%2Fupload-init
+     *
+     * @param array  $parameters
+     *
+     * @return array
+     */
+    private function mediaInitParametersV2(array $parameters)
+    {
+        $return = [
+            'command' => 'INIT',
+            'media_type' => $parameters['media_type'],
+            'total_bytes' => filesize($parameters['media']),
+            'media_category' => $this->getMediaCategory($parameters['media_type']),
+        ];
+        if (isset($parameters['additional_owners'])) {
+            $return['additional_owners'] = $parameters['additional_owners'];
+        }
+        if (isset($parameters['media_category'])) {
+            $return['media_category'] = $parameters['media_category'];
+        }
+        return $return;
+    }
+
+    // mediaType (image/png等)からXのMedia categoryを取得
+    // @see https://docs.x.com/x-api/media/quickstart/best-practices#media-categories
+    private function getMediaCategory(string $mediaType): string {
+        if ($mediaType === 'image/gif') {
+            return 'tweet_gif';
+        }
+
+        if (str_starts_with($mediaType, 'video')) {
+            return 'tweet_video';
+        }
+
+        return 'tweet_image';
+    }
+
+    /**
      * Cleanup any parameters that are known not to work.
      *
      * @param array  $parameters
