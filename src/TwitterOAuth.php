@@ -27,6 +27,7 @@ use Composer\CaBundle\CaBundle;
 class TwitterOAuth extends Config
 {
     private const API_HOST = 'https://api.twitter.com';
+    private const API_V2_HOST = 'https://api.x.com';
     private const UPLOAD_HOST = 'https://upload.twitter.com';
 
     /** @var Response details about the result of the last request */
@@ -315,14 +316,14 @@ class TwitterOAuth extends Config
      */
     public function uploadV2($path, array $parameters = [])
     {
-        $init = $this->http('POST', self::API_HOST, $path, $this->mediaInitParametersV2($parameters), false);
+        $init = $this->http('POST', self::API_V2_HOST, $path, $this->mediaInitParametersV2($parameters), false);
         // Append
         $segmentIndex = 0;
         $media = fopen($parameters['media'], 'rb');
         while (!feof($media)) {
             $this->http(
                 'POST',
-                self::API_HOST,
+                self::API_V2_HOST,
                 'media/upload',
                 [
                     'command' => 'APPEND',
@@ -337,7 +338,7 @@ class TwitterOAuth extends Config
         // Finalize
         $finalize = $this->http(
             'POST',
-            self::API_HOST,
+            self::API_V2_HOST,
             'media/upload',
             [
                 'command' => 'FINALIZE',
@@ -378,7 +379,7 @@ class TwitterOAuth extends Config
      */
     public function mediaStatusV2($media_id)
     {
-        return $this->http('GET', self::API_HOST, 'media/upload', [
+        return $this->http('GET', self::API_V2_HOST, 'media/upload', [
             'command' => 'STATUS',
             'media_id' => $media_id
         ], false);
