@@ -28,10 +28,6 @@
   "repositories": [
     {
       "type": "git",
-      "url": "https://github.com/morozov/php-vcr"
-    },
-    {
-      "type": "git",
       "url": "https://github.com/abraham/phpunit-testlistener-vcr"
     }
   ],
