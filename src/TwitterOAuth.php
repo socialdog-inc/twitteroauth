@@ -306,6 +306,49 @@ class TwitterOAuth extends Config
     }
 
     /**
+     * Upload media to api.x.com using X API v2.
+     *
+     * @param string $path
+     * @param array  $parameters
+     *
+     * @return array|object
+     */
+    public function uploadV2($path, array $parameters = [])
+    {
+        $init = $this->http('POST', self::API_HOST, $path, $this->mediaInitParametersV2($parameters), false);
+        // Append
+        $segmentIndex = 0;
+        $media = fopen($parameters['media'], 'rb');
+        while (!feof($media)) {
+            $this->http(
+                'POST',
+                self::API_HOST,
+                'media/upload',
+                [
+                    'command' => 'APPEND',
+                    'media_id' => $init['data']['id'],
+                    'segment_index' => $segmentIndex++,
+                    'media' => fread($media, $this->chunkSize)
+                ],
+                false,
+            );
+        }
+        fclose($media);
+        // Finalize
+        $finalize = $this->http(
+            'POST',
+            self::API_HOST,
+            'media/upload',
+            [
+                'command' => 'FINALIZE',
+                'media_id' => $init['data']['id'],
+            ],
+            false,
+        );
+        return $finalize;
+    }
+
+    /**
      * Progression of media upload
      *
      * @param string $media_id
