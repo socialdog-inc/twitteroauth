@@ -27,6 +27,7 @@ use Composer\CaBundle\CaBundle;
 class TwitterOAuth extends Config
 {
     private const API_HOST = 'https://api.twitter.com';
+    private const API_V2_HOST = 'https://api.x.com';
     private const UPLOAD_HOST = 'https://upload.twitter.com';
 
     /** @var Response details about the result of the last request */
@@ -306,6 +307,49 @@ class TwitterOAuth extends Config
     }
 
     /**
+     * Upload media to api.x.com using X API v2.
+     *
+     * @param string $path
+     * @param array  $parameters
+     *
+     * @return array|object
+     */
+    public function uploadV2($path, array $parameters = [])
+    {
+        $init = $this->http('POST', self::API_V2_HOST, $path, $this->mediaInitParametersV2($parameters), false);
+        // Append
+        $segmentIndex = 0;
+        $media = fopen($parameters['media'], 'rb');
+        while (!feof($media)) {
+            $this->http(
+                'POST',
+                self::API_V2_HOST,
+                'media/upload',
+                [
+                    'command' => 'APPEND',
+                    'media_id' => $init['data']['id'],
+                    'segment_index' => $segmentIndex++,
+                    'media' => fread($media, $this->chunkSize)
+                ],
+                false,
+            );
+        }
+        fclose($media);
+        // Finalize
+        $finalize = $this->http(
+            'POST',
+            self::API_V2_HOST,
+            'media/upload',
+            [
+                'command' => 'FINALIZE',
+                'media_id' => $init['data']['id'],
+            ],
+            false,
+        );
+        return $finalize;
+    }
+
+    /**
      * Progression of media upload
      *
      * @param string $media_id
@@ -325,6 +369,22 @@ class TwitterOAuth extends Config
             false,
         );
     }
+
+    /**
+     * Progression of media upload
+     *
+     * @param string $media_id
+     *
+     * @return array|object
+     */
+    public function mediaStatusV2($media_id)
+    {
+        return $this->http('GET', self::API_V2_HOST, 'media/upload', [
+            'command' => 'STATUS',
+            'media_id' => $media_id
+        ], false);
+    }
+
 
     /**
      * Private method to upload media (not chunked) to upload.twitter.com.
@@ -430,6 +490,48 @@ class TwitterOAuth extends Config
             array_flip($allowed_keys),
         );
         return array_merge($base, $allowed_parameters);
+    }
+
+    /**
+     * Private method to get params for upload media chunked init.
+     * Twitter docs: https://docs.x.com/x-api/media/quickstart/media-upload-chunked#step-1-%3A-post-media%2Fupload-init
+     *
+     * @param array  $parameters
+     *
+     * @return array
+     */
+    private function mediaInitParametersV2(array $parameters)
+    {
+        $return = [
+            'command' => 'INIT',
+            'media_type' => $parameters['media_type'],
+            'total_bytes' => filesize($parameters['media']),
+            'media_category' => $this->getMediaCategory($parameters['media_type']),
+        ];
+        if (isset($parameters['additional_owners'])) {
+            $return['additional_owners'] = $parameters['additional_owners'];
+        }
+        if (isset($parameters['media_category'])) {
+            $return['media_category'] = $parameters['media_category'];
+        }
+        return $return;
+    }
+
+    /**
+     * mediaType (image/png等)からXのMedia categoryを取得
+     * @see https://docs.x.com/x-api/media/quickstart/best-practices#media-categories
+     */
+    private function getMediaCategory(string $mediaType): string
+    {
+        if ($mediaType === 'image/gif') {
+            return 'tweet_gif';
+        }
+
+        if (str_starts_with($mediaType, 'video')) {
+            return 'tweet_video';
+        }
+
+        return 'tweet_image';
     }
 
     /**
