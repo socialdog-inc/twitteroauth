@@ -332,6 +332,7 @@ class TwitterOAuth extends Config
                     'media' => fread($media, $this->chunkSize)
                 ],
                 false,
+                true,
             );
         }
         fclose($media);
@@ -579,7 +580,8 @@ class TwitterOAuth extends Config
         string $host,
         string $path,
         array $parameters,
-        bool $json
+        bool $json,
+        bool $isBinaryMultipart = false
     ) {
         $this->resetLastResponse();
         $this->resetAttemptsNumber();
@@ -593,6 +595,7 @@ class TwitterOAuth extends Config
             $method,
             $parameters,
             $json,
+            $isBinaryMultipart
         );
     }
 
@@ -648,11 +651,12 @@ class TwitterOAuth extends Config
         string $url,
         string $method,
         array $parameters,
-        bool $json
+        bool $json,
+        bool $isBinaryMultipart = false
     ) {
         do {
             $this->sleepIfNeeded();
-            $result = $this->oAuthRequest($url, $method, $parameters, $json);
+            $result = $this->oAuthRequest($url, $method, $parameters, $json, $isBinaryMultipart);
             $response = JsonDecoder::decode($result, $this->decodeJsonAsArray);
             $this->response->setBody($response);
             $this->attempts++;
@@ -689,7 +693,8 @@ class TwitterOAuth extends Config
         string $url,
         string $method,
         array $parameters,
-        bool $json = false
+        bool $json = false,
+        bool $isBinaryMultipart = false
     ) {
         $request = Request::fromConsumerAndToken(
             $this->consumer,
@@ -697,7 +702,9 @@ class TwitterOAuth extends Config
             $method,
             $url,
             $parameters,
-            $json,
+            // jsonに加えて、binary multipartリクエストの場合でもbodyをoauthのsignatureの生成に利用しない
+            // @see https://developer.x.com/en/docs/x-api/v1/media/upload-media/uploading-media/media-best-practices
+            $json || $isBinaryMultipart
         );
         if (array_key_exists('oauth_callback', $parameters)) {
             // Twitter doesn't like oauth_callback as a parameter.
@@ -724,6 +731,7 @@ class TwitterOAuth extends Config
             $authorization,
             $parameters,
             $json,
+            $isBinaryMultipart
         );
     }
 
@@ -780,7 +788,8 @@ class TwitterOAuth extends Config
         string $method,
         string $authorization,
         array $postfields,
-        bool $json = false
+        bool $json = false,
+        bool $isBinaryMultipart = false
     ): string {
         $options = $this->curlOptions();
         $options[CURLOPT_URL] = $url;
@@ -799,6 +808,7 @@ class TwitterOAuth extends Config
                     $options,
                     $postfields,
                     $json,
+                    $isBinaryMultipart
                 );
                 break;
             case 'DELETE':
@@ -903,7 +913,8 @@ class TwitterOAuth extends Config
     private function setPostfieldsOptions(
         array $options,
         array $postfields,
-        bool $json
+        bool $json,
+        bool $isBinaryMultipart = false
     ): array {
         if ($json) {
             $options[CURLOPT_HTTPHEADER][] = 'Content-type: application/json';
@@ -912,7 +923,13 @@ class TwitterOAuth extends Config
                 JSON_THROW_ON_ERROR,
             );
         } else {
-            $options[CURLOPT_POSTFIELDS] = Util::buildHttpQuery($postfields);
+            if ($isBinaryMultipart) {
+                // binary multipartリクエストの場合headerを設定し、postデータをエンコードせず直接設定（X API v2 メディアアップロードの対応）
+                $options[CURLOPT_HTTPHEADER][] = 'Content-type: multipart/form-data';
+                $options[CURLOPT_POSTFIELDS] = $postfields;
+            } else {
+                $options[CURLOPT_POSTFIELDS] = Util::buildHttpQuery($postfields);
+            }
         }
 
         return $options;
