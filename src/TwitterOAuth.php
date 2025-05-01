@@ -318,7 +318,7 @@ class TwitterOAuth extends Config
     public function uploadV2(array $parameters = [])
     {
         $initPath = 'media/upload/initialize';
-        $init = $this->http('POST', self::API_V2_HOST, $initPath, $this->mediaInitParametersV2($parameters), false);
+        $init = $this->http('POST', self::API_V2_HOST, $initPath, $this->mediaInitParametersV2($parameters), true);
         // Append
         $segmentIndex = 0;
         $media = fopen($parameters['media'], 'rb');
