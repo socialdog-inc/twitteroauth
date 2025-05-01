@@ -315,10 +315,10 @@ class TwitterOAuth extends Config
      *
      * @return array|object
      */
-    public function uploadV2(array $parameters = [])
+    public function uploadV2MultipleEndpoints(array $parameters = [])
     {
         $initPath = 'media/upload/initialize';
-        $init = $this->http('POST', self::API_V2_HOST, $initPath, $this->mediaInitParametersV2($parameters), true);
+        $init = $this->http('POST', self::API_V2_HOST, $initPath, $this->mediaInitParametersV2MultipleEndpoints($parameters), true);
         // Append
         $segmentIndex = 0;
         $media = fopen($parameters['media'], 'rb');
@@ -360,9 +360,9 @@ class TwitterOAuth extends Config
      *
      * @return array|object
      */
-    public function uploadV2SingleEndpoint($path, array $parameters = [])
+    public function uploadV2($path, array $parameters = [])
     {
-        $init = $this->http('POST', self::API_V2_HOST, $path, $this->mediaInitParametersV2SingleEndpoint($parameters), false);
+        $init = $this->http('POST', self::API_V2_HOST, $path, $this->mediaInitParametersV2($parameters), false);
         // Append
         $segmentIndex = 0;
         $media = fopen($parameters['media'], 'rb');
@@ -547,7 +547,7 @@ class TwitterOAuth extends Config
      *
      * @return array
      */
-    private function mediaInitParametersV2(array $parameters)
+    private function mediaInitParametersV2MultipleEndpoints(array $parameters)
     {
         $return = [
             'media_type' => $parameters['media_type'],
@@ -571,7 +571,7 @@ class TwitterOAuth extends Config
      *
      * @return array
      */
-    private function mediaInitParametersV2SingleEndpoint(array $parameters)
+    private function mediaInitParametersV2(array $parameters)
     {
         $return = [
             'command' => 'INIT',
