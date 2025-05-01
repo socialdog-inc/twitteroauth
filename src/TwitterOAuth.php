@@ -308,7 +308,7 @@ class TwitterOAuth extends Config
 
     /**
      * Upload media to api.x.com using X API v2.
-     * Uses multiple endpoints, one for each commands (/init, /append, /finalize).
+     * Uses multiple endpoints, one for each commands (/initialize, /append, /finalize).
      * @see https://docs.x.com/x-api/media/media-upload-initialize
      *
      * @param array  $parameters
