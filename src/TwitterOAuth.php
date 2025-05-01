@@ -344,9 +344,7 @@ class TwitterOAuth extends Config
             'POST',
             self::API_V2_HOST,
             $finalizePath,
-            [
-                'command' => 'FINALIZE',
-            ],
+            [],
             false,
         );
         return $finalize;
