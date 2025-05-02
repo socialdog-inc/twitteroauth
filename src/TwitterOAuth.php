@@ -308,6 +308,52 @@ class TwitterOAuth extends Config
 
     /**
      * Upload media to api.x.com using X API v2.
+     * Uses multiple endpoints, one for each commands (/initialize, /append, /finalize).
+     * @see https://docs.x.com/x-api/media/media-upload-initialize
+     *
+     * @param array  $parameters
+     *
+     * @return array|object
+     */
+    public function uploadV2MultipleEndpoints(array $parameters = [])
+    {
+        $initPath = 'media/upload/initialize';
+        $init = $this->http('POST', self::API_V2_HOST, $initPath, $this->mediaInitParametersV2MultipleEndpoints($parameters), true);
+        // Append
+        $segmentIndex = 0;
+        $media = fopen($parameters['media'], 'rb');
+        $mediaId = $init['data']['id'];
+        $appendPath = 'media/upload/' .  $mediaId . '/append';
+        while (!feof($media)) {
+            $this->http(
+                'POST',
+                self::API_V2_HOST,
+                $appendPath,
+                [
+                    'segment_index' => $segmentIndex++,
+                    'media' => fread($media, $this->chunkSize)
+                ],
+                false,
+                true,
+            );
+        }
+        fclose($media);
+        // Finalize
+        $finalizePath = 'media/upload/' .  $mediaId . '/finalize';
+        $finalize = $this->http(
+            'POST',
+            self::API_V2_HOST,
+            $finalizePath,
+            [],
+            false,
+        );
+        return $finalize;
+    }
+
+    /**
+     * @deprecated
+     * Upload media to api.x.com using X API v2.
+     * Uses the single /upload endpoint with commands (INIT, APPEND, FINALIZE) specified with the command request parameter.
      *
      * @param string $path
      * @param array  $parameters
@@ -491,6 +537,30 @@ class TwitterOAuth extends Config
             array_flip($allowed_keys),
         );
         return array_merge($base, $allowed_parameters);
+    }
+
+    /**
+     * Private method to get params for upload media chunked init.
+     * Twitter docs: https://docs.x.com/x-api/media/quickstart/media-upload-chunked#step-1-%3A-post-media%2Fupload-init
+     *
+     * @param array  $parameters
+     *
+     * @return array
+     */
+    private function mediaInitParametersV2MultipleEndpoints(array $parameters)
+    {
+        $return = [
+            'media_type' => $parameters['media_type'],
+            'total_bytes' => filesize($parameters['media']),
+            'media_category' => $this->getMediaCategory($parameters['media_type']),
+        ];
+        if (isset($parameters['additional_owners'])) {
+            $return['additional_owners'] = $parameters['additional_owners'];
+        }
+        if (isset($parameters['media_category'])) {
+            $return['media_category'] = $parameters['media_category'];
+        }
+        return $return;
     }
 
     /**
