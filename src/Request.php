@@ -51,7 +51,7 @@ class Request
      */
     public static function fromConsumerAndToken(
         Consumer $consumer,
-        Token $token = null,
+        ?Token $token,
         string $httpMethod,
         string $httpUrl,
         array $parameters = [],
@@ -252,7 +252,7 @@ class Request
     public function signRequest(
         SignatureMethod $signatureMethod,
         Consumer $consumer,
-        Token $token = null
+        ?Token $token = null
     ) {
         $this->setParameter(
             'oauth_signature_method',
@@ -272,7 +272,7 @@ class Request
     public function buildSignature(
         SignatureMethod $signatureMethod,
         Consumer $consumer,
-        Token $token = null
+        ?Token $token = null
     ): string {
         return $signatureMethod->buildSignature($this, $consumer, $token);
     }
