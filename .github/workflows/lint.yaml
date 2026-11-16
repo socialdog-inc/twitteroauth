@@ -5,6 +5,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      # composer.lock の開発依存（phpspec/prophecy 1.15）が PHP 8.2 未満にしか対応していないため固定する
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
       - uses: actions/setup-node@v3
         with:
           node-version: 12

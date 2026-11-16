@@ -318,12 +318,18 @@ class TwitterOAuth extends Config
     public function uploadV2MultipleEndpoints(array $parameters = [])
     {
         $initPath = 'media/upload/initialize';
-        $init = $this->http('POST', self::API_V2_HOST, $initPath, $this->mediaInitParametersV2MultipleEndpoints($parameters), true);
+        $init = $this->http(
+            'POST',
+            self::API_V2_HOST,
+            $initPath,
+            $this->mediaInitParametersV2MultipleEndpoints($parameters),
+            true,
+        );
         // Append
         $segmentIndex = 0;
         $media = fopen($parameters['media'], 'rb');
         $mediaId = $init['data']['id'];
-        $appendPath = 'media/upload/' .  $mediaId . '/append';
+        $appendPath = 'media/upload/' . $mediaId . '/append';
         while (!feof($media)) {
             $this->http(
                 'POST',
@@ -331,7 +337,7 @@ class TwitterOAuth extends Config
                 $appendPath,
                 [
                     'segment_index' => $segmentIndex++,
-                    'media' => fread($media, $this->chunkSize)
+                    'media' => fread($media, $this->chunkSize),
                 ],
                 false,
                 true,
@@ -339,7 +345,7 @@ class TwitterOAuth extends Config
         }
         fclose($media);
         // Finalize
-        $finalizePath = 'media/upload/' .  $mediaId . '/finalize';
+        $finalizePath = 'media/upload/' . $mediaId . '/finalize';
         $finalize = $this->http(
             'POST',
             self::API_V2_HOST,
@@ -353,7 +359,8 @@ class TwitterOAuth extends Config
     /**
      * @deprecated
      * Upload media to api.x.com using X API v2.
-     * Uses the single /upload endpoint with commands (INIT, APPEND, FINALIZE) specified with the command request parameter.
+     * Uses the single /upload endpoint with commands (INIT, APPEND, FINALIZE)
+     * specified with the command request parameter.
      *
      * @param string $path
      * @param array  $parameters
@@ -362,7 +369,13 @@ class TwitterOAuth extends Config
      */
     public function uploadV2($path, array $parameters = [])
     {
-        $init = $this->http('POST', self::API_V2_HOST, $path, $this->mediaInitParametersV2($parameters), false);
+        $init = $this->http(
+            'POST',
+            self::API_V2_HOST,
+            $path,
+            $this->mediaInitParametersV2($parameters),
+            false,
+        );
         // Append
         $segmentIndex = 0;
         $media = fopen($parameters['media'], 'rb');
@@ -375,7 +388,7 @@ class TwitterOAuth extends Config
                     'command' => 'APPEND',
                     'media_id' => $init['data']['id'],
                     'segment_index' => $segmentIndex++,
-                    'media' => fread($media, $this->chunkSize)
+                    'media' => fread($media, $this->chunkSize),
                 ],
                 false,
                 true,
@@ -426,12 +439,17 @@ class TwitterOAuth extends Config
      */
     public function mediaStatusV2($media_id)
     {
-        return $this->http('GET', self::API_V2_HOST, 'media/upload', [
-            'command' => 'STATUS',
-            'media_id' => $media_id
-        ], false);
+        return $this->http(
+            'GET',
+            self::API_V2_HOST,
+            'media/upload',
+            [
+                'command' => 'STATUS',
+                'media_id' => $media_id,
+            ],
+            false,
+        );
     }
-
 
     /**
      * Private method to upload media (not chunked) to upload.twitter.com.
@@ -552,7 +570,9 @@ class TwitterOAuth extends Config
         $return = [
             'media_type' => $parameters['media_type'],
             'total_bytes' => filesize($parameters['media']),
-            'media_category' => $this->getMediaCategory($parameters['media_type']),
+            'media_category' => $this->getMediaCategory(
+                $parameters['media_type'],
+            ),
         ];
         if (isset($parameters['additional_owners'])) {
             $return['additional_owners'] = $parameters['additional_owners'];
@@ -577,7 +597,9 @@ class TwitterOAuth extends Config
             'command' => 'INIT',
             'media_type' => $parameters['media_type'],
             'total_bytes' => filesize($parameters['media']),
-            'media_category' => $this->getMediaCategory($parameters['media_type']),
+            'media_category' => $this->getMediaCategory(
+                $parameters['media_type'],
+            ),
         ];
         if (isset($parameters['additional_owners'])) {
             $return['additional_owners'] = $parameters['additional_owners'];
@@ -665,7 +687,7 @@ class TwitterOAuth extends Config
             $method,
             $parameters,
             $json,
-            $isBinaryMultipart
+            $isBinaryMultipart,
         );
     }
 
@@ -726,7 +748,13 @@ class TwitterOAuth extends Config
     ) {
         do {
             $this->sleepIfNeeded();
-            $result = $this->oAuthRequest($url, $method, $parameters, $json, $isBinaryMultipart);
+            $result = $this->oAuthRequest(
+                $url,
+                $method,
+                $parameters,
+                $json,
+                $isBinaryMultipart,
+            );
             $response = JsonDecoder::decode($result, $this->decodeJsonAsArray);
             $this->response->setBody($response);
             $this->attempts++;
@@ -774,7 +802,7 @@ class TwitterOAuth extends Config
             $parameters,
             // jsonに加えて、binary multipartリクエストの場合でもbodyをoauthのsignatureの生成に利用しない
             // @see https://developer.x.com/en/docs/x-api/v1/media/upload-media/uploading-media/media-best-practices
-            $json || $isBinaryMultipart
+            $json || $isBinaryMultipart,
         );
         if (array_key_exists('oauth_callback', $parameters)) {
             // Twitter doesn't like oauth_callback as a parameter.
@@ -801,7 +829,7 @@ class TwitterOAuth extends Config
             $authorization,
             $parameters,
             $json,
-            $isBinaryMultipart
+            $isBinaryMultipart,
         );
     }
 
@@ -878,7 +906,7 @@ class TwitterOAuth extends Config
                     $options,
                     $postfields,
                     $json,
-                    $isBinaryMultipart
+                    $isBinaryMultipart,
                 );
                 break;
             case 'DELETE':
@@ -995,10 +1023,13 @@ class TwitterOAuth extends Config
         } else {
             if ($isBinaryMultipart) {
                 // binary multipartリクエストの場合headerを設定し、postデータをエンコードせず直接設定（X API v2 メディアアップロードの対応）
-                $options[CURLOPT_HTTPHEADER][] = 'Content-type: multipart/form-data';
+                $options[CURLOPT_HTTPHEADER][] =
+                    'Content-type: multipart/form-data';
                 $options[CURLOPT_POSTFIELDS] = $postfields;
             } else {
-                $options[CURLOPT_POSTFIELDS] = Util::buildHttpQuery($postfields);
+                $options[CURLOPT_POSTFIELDS] = Util::buildHttpQuery(
+                    $postfields,
+                );
             }
         }
 
